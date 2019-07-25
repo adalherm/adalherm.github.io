@@ -1,1 +1,417 @@
-Hello GitHubPages
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="solarized-dark.css">
+        <script src="highlight.pack.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script>
+        <title>macOS</title>
+    </head>
+<p>
+<div>
+<h1>System operacyjny macOS</h1>
+<p style="font-family: Zapfino; font-size: small; text-align: right;">
+    Opowieść o obsłudze komendami tekstowymi z minimalną ilością żargonu technicznego</p>
+</div>
+<h2>Budowa systemu</h2>
+
+<p class="subhead">System operacyjny <a href="https://en.wikipedia.org/wiki/MacOS">macOS</a> komputerów firmy
+<a href="https://en.wikipedia.org/wiki/Apple_Inc.">Apple</a> należy do podrodziny
+<a href="https://en.wikipedia.org/wiki/Berkeley_Software_Distribution">BSD</a> rodziny
+    <a href="https://en.wikipedia.org/wiki/Unix">Unix</a>. Składa się z warstw:</p>
+
+<p style="float: left; margin-right: 25px; margin-top: 0">
+    <img src="macLayers.jpg">
+
+<ul>
+    <li>
+        Graficzny interfejs użytkownika <a href="https://en.wikipedia.org/wiki/Aqua_(user_interface)">Aqua</a>
+    </li>
+    <li>
+        Mechanizmy (<a href="https://en.wikipedia.org/wiki/Cocoa_(API)">Cocoa</a>)
+        jednolicie wspierające komunikację między programami zewnętrznymi a systemem operacyjnym
+        <a href="https://en.wikipedia.org/wiki/Darwin_(operating_system)">Darwin</a>
+    </li>
+    <li>
+        Zasadniczy system operacyjny Darwin o otwartym kodzie źródłowym <a href="https://opensource.apple.com">tutaj</a>,
+        gdzie centralnym jego elementem jest hybrydowe jądro <a href="https://en.wikipedia.org/wiki/XNU">XNU</a>
+        składające się z mikrojądra <a href="https://en.wikipedia.org/wiki/Mach_(kernel)">Mach</a>
+        i sterowników czyli programów nadzorujących pracę urządzeń rzeczywistych i wirtualnych.
+    </li>
+    <li>
+        Mikrojądro XNU nadzoruje dostęp wykonywanych programów tzw. procesów do procesora i innych urządzeń poprzez ich sterowniki.
+        XNU umożliwia komunikację <a href="https://en.wikipedia.org/wiki/Inter-process_communication">IPC</a>
+        między procesami i ze sterownikami za pomocą kolejek komunikatów.
+    </li>
+</ul>
+</p><hr>
+
+<!-- instalacja ststemu, wybór typu systemu plików -->
+
+<h2>Wiersz poleceń</h2>
+
+Czasami rozwiązanie problemu na komputerze wymaga pracy w wierszu poleceń gdyż w podsystemie Aqua nie ma odpowiednich narzędzi.
+Taka sytuacja zachodzi również gdy chcemy zautomatyzować ciąg zadań albo pracować z systemem zdalnie poprzez sieć.
+
+Po zalogowaniu się lokalnie na konto użytkownika w systemie macOS pojawi się graficzny pulpit kontrolowany przez podsystem (powłokę graficzną) Aqua.
+
+Naciskając jednocześnie klawisze command i spację pojawi się okno <strong>Spotlight Search</strong>.
+Po wpisaniu w miejscu migającego kursora słowa <strong><code>Terminal</code></strong> i naciśnięciu klawisza <strong><code>Enter</code></strong>
+ukaże się okno wirtualnego dalekopisu. To wirtualne urządzenie pozwala powłoce jądra lokalnego lub zdalnego systemu na przyjmowanie napisanych
+po znaku zachęty (przeważnie znaku dolara <strong><code>$</code></strong>) poleceń.
+Powłoka jądra (domyślnie <a href="http://www.lokonopnicka.pl/pliki/pomoce/linux/kursbasha/main.html">Bash</a>)
+to język, który pozwala łączyć polecenia w algorytmiczne instrukcje i tłumaczy je w locie na wywołaia systemowe jądra.
+Plik z możliwością wykonania zapisanymi w nim instrukcjami powłoki nazywa się skryptem.
+<img src="termShellKernel.png"><br>
+Aby dowiedzieć się w jakiej powłoce pracujemy napiszmy komendę:
+<pre><code class="shell">$ echo $SHELL
+/bin/bash</code></pre><hr>
+
+<h2>Plik, katalog, komenda</h2>
+
+<p>
+    Wpisując słowo <strong><code>tty</code></strong> i naciskając <strong><code>Enter</code></strong>:
+<pre><code class="shell">$ tty
+/dev/ttys000</code></pre>
+    otrzymamy komunikat zwrotny a jego sens to: <p style="background-color: blue; color: greenyellow;">
+    Terminal z którego właśnie korzystasz jest plikem o nazwie <strong><code>ttys000</code></strong>.
+    Znajduje się on w katalogu urządzeń <strong><code>dev</code></strong> a ten zaś w katalogu korzeniu <strong><code>/</code></strong>.</p>
+    Każde urządzenie czy to rzeczywiste czy wirtualne jest przedstawiane użytkownikowi przez system jako plik znajdujący się w jakimś katalogu.
+    Każdy katalog zawierający swoje pliki, tak naprawdę równieź jest plikiem przechwującym jedynie informacje jak te pliki znaleźć i co ci wolno z nimi zrobić.
+    Plik zwykły to ciąg znaków zakończonych specjalną sekwencją oznaczoną symbolicznie <strong><code>EOF</code></strong>.
+</p>
+<p>
+Zapytajmy o typ pliku <strong><code>ttys000</code></strong>:
+<pre><code class="shell">$ file /dev/ttys000
+/dev/ttys000: character special (16/0)</code></pre>
+Polecenie <strong><code>file</code></strong> poinformowało, że plik, który reprezentuje terminal jest specjalnym plikiem znakowym.
+Istnieją też specjalne pliki blokowe urządzeń (np. pamięci masowe HDD lub SSD zanim prześlą dane najpierw buforują je w bloki)
+<br>
+Samo polecenie <strong><code>tty</code></strong> też jest plikiem ale wykonywalnym i zwykłym, czyli programem.
+Znajdźmy jego połżenie poleceniem <strong><code>which</code></strong>:
+<pre><code class="shell">$ which tty
+/usr/bin/tty</code></pre>
+Ateraz sprawdźmy jego typ:
+<pre><code class="shell">$ file /usr/bin/tty
+/usr/bin/tty: Mach-O 64-bit executable x86_64</code></pre>
+I rzeczywiście <code>tty</code> ma format 64-bitowego pliku wykonywalnego na maszynach o architekturze procesora x86_64 pod kontrolą jądra Mach.
+
+Sprawdźmy czy rzeczywiście takim komputerem dysponujemy:
+<pre><code class="shell">$ machine
+x86_64h</code></pre>
+
+A czy odpowiednim systemem operacyjnum?:
+<pre><code class="shell">$ uname
+Darwin</code></pre>
+</p>
+<p>
+Każde polecenie ma swoją systemową stronę pomocy wywoływaną poleceniem <strong><code>man</code></strong> np.:
+<pre><code class="shell">$ man file</code></pre>
+Przewijamy tekst strzałkami w górę i w dół. Przyciśnięnie klawisza <strong><code>q</code></strong> zamyka program.
+</p>
+<hr>
+
+<h2>Wielozadaniowość, wielodostępność, wieloprocesorowość</h2>
+
+Jeden komputer z zainstalowanym systemem operacyjnym Unix pozwala wielu użytkownikom posiadającym na nim konta i zalogowanych np. zdalnie,
+na jednoczesne uruchomienie przez każdego z nich wielu programów, które stają się wtedy procesami.
+Procesy stoją w kolejkach o różnych priorytetach. Jądro kontroluje z której kolejki procesor ma na chwilę wykonać proces,
+by później się przełączyć do następnego co sprawi że każdy użytkownik ma wrażenie że jego procesy pracują jednoczeście.
+Jądro pilnuje też aby procesy nawzajem się nie podglądały jeśli to zabronione.<br>
+Spytajmy ile aktualnie jest procesów w systemie:
+<pre><code class="shell">$ ps aux | wc -l
+    362</code></pre>
+Ta liczba ciągle się zmienia. Lepszym poleceniem do obserwacji na bieżąco procesów
+(a nawet obciążenia nimi procesorów logicznych, pamięci i partcji wymiany) jest polecenie:
+<pre><code class="shell">$ htop -t</code></pre>
+Dalej opiszę jak go zainstalować bo nie jest dostępne domyślnie w systemie.
+<hr>
+
+<h2>Prawa</h2>
+<p>
+Każdy użytkownik ma do danego pliku przydzielone albo odebrane niezależnie trzy kolejne prawa:
+<ul>
+    <li>Prawo czytania treści pliku, oznaczane literką <strong>r</strong>.</li>
+    <li>Literka <strong>w</strong> wskazuje na możliwość nadpisywania lub dopisywania znaków do treści pliku.</li>
+    <li>A gdy plik jest programem to uruchomienie wymaga zezwolenia oznaczonego literką <strong>x</strong>.</li>
+</ul>
+Odebranie prawa to zastąpienie odpowiedniej literki znakiem minus.
+Można utworzyć osiem różnych kombinacji praw:
+<pre><code class="plaintext">---, --x, -w-, -wx, r--, r-x, rw-, rwx</code></pre>
+Zastąpmy literki cyfrą 1 a minus cyfrą 0, otrzymamy:
+<pre><code class="plaintext">000, 001, 010, 011, 100, 101, 110, 111</code></pre>
+Powstałe napisy możemy zinterpretować jako kolejne liczby w systemie dwójkowym, ponumerujmy je:
+<pre><code class="plaintext">  0,   1,   2,   3,   4,   5,   6,   7</code></pre>
+Otrzymaliśmy osiem cyfr, które dalej będziemy interpretować jako liczby w systemie ósemkowym.
+Każda taka jednocyfrowa liczba ósemkowa określa jednoznacznie zetaw praw użytkownika do pliku.
+</p>
+<p>
+Użytkownik tworząc plik staje się jego właścicielem i ustala nad nim prawa, które można wyrazić trzycyfrową liczbą ósemkową:
+<ul style="list-style-type:upper-roman;">
+    <li>Pierwsza, najbardziej znacząca ósemkowa cyfra określa prawa dla właściciela.</li>
+    <li>Gdy nad plikiem pracuje wielu użytkowników mogą oni ustanowić grupę
+        a dla grupy tej właściciel ustala odrębne prawa do jego pliku co jest odzwierciedlone drugą cyfrą praw.</li>
+    <li>Prawa użytkownika, który nie jest ani włścicielem ani nie należy do grupy określa trzecia, najmniej znacząca cyfra.</li>
+</ul>
+Np. plik z pełnymi prawami dla wszystkich reprezentuje napis rwxrwxrwx lub równoważnie liczba 777.
+</p>
+<p>
+Każdy użytkownik należy do co najmniej jednej grupy i dokładnie jedna z nich jest dla niego podstawowa.
+    Użytkownik jest rozpoznawany w systemie przez liczbowy identyfikator <strong><code>uid</code></strong> skojarzony z loginem,
+    podobnie jego grupa podstawowa identyfikatorem <strong><code>gid</code></strong> a pozostałe grupy są na liście identyfikatora
+    <strong><code>groups</code></strong>:
+
+<pre><code class="shell">$ id
+uid=501(adal) gid=20(staff) groups=20(staff),12(everyone),61(localaccounts),79(_appserverusr),80(admin),81(_appserveradm),
+98(_lpadmin),501(access_bpf),701(com.apple.sharepoint.group.1),33(_appstore),100(_lpoperator),204(_developer),
+250(_analyticsusers),395(com.apple.access_ftp),398(com.apple.access_screensharing),399(com.apple.access_ssh)</code></pre>
+</p>
+<p>
+Stwórzmy pusty plik:
+
+<pre><code class="shell">$ > myfile</code></pre>
+Właśnie przsłaliśmy pustkę do pliku a ponieważ plik nie istniał został stworzony bez zawartości.<br>
+
+Każdy plik ma swój unikatowy węzeł (i-node) przechowujący informacje o pliku.
+Przejrzyjmy zawartość węzła informacyjnego dla pliku myfile:
+
+<pre><code class="shell">$ stat -x myfile
+File: "myfile"
+Size: 0            FileType: Regular File
+Mode: (0644/-rw-r--r--)         Uid: (  501/    adal)  Gid: (   20/   staff)
+Device: 1,4   Inode: 10975291    Links: 1
+Access: Tue Jun 11 10:18:38 2019
+Modify: Tue Jun 11 10:18:38 2019
+Change: Tue Jun 11 10:18:38 2019</code></pre>
+
+Otrzymane informacje opatrzone są etykietami:
+<ul>
+    <li>
+        <p><strong><code style="color: darkorange;">Size</code></strong>: Rozmiar pliku wynosi zero - nie przydzielono mu jeszcze żadnego obszaru na dane w pamięci masowej.</p>
+    </li>
+    <li>
+        <p><strong><code style="color: darkorange;">FileType</code></strong>: Plik zwykły.</p>
+    </li>
+    <li>
+        <p><strong><code style="color: darkorange;">Uid</code></strong>: Identyfikator właściciela pliku to 501 a jego login to adal.</p>
+    </li>
+    <li>
+        <p><strong><code style="color: darkorange;">Gid</code></strong>: Identyfikator grupy dla której ten plik ma specjalne prawa to 20 o nazwie staff.</p>
+    </li>
+    <li>
+        <p><strong><code style="color: darkorange;">Mode</code></strong>: Dwoma sposobami podano że włściciel ma prawo czytania i pisania,
+        a grupa i pozostali użytkownicy tylko czytania.
+        Pierwsze znaki 0 w sekwencji liczbowej oraz minus w sekwencji literowej oznaczją że jest to plik zwykły.</p>
+    </li>
+    <li>
+        <p><strong><code style="color: darkorange;">Device</code></strong>: Liczba 1 to rzeczywisty numer urządzenia a liczba 4 to jego logicznie wydzielona część,
+        która przechwuje plik myfile.
+        Tu: 1 - Urządzenie SSD, 4 - Partycja na urządzeniu SSD.</p>
+    </li>
+    <li>
+        <p><strong><code style="color: darkorange;">Inode</code></strong>: Numer identyfiacyjny uzyskamy też taką komendą:
+        <pre><code class="shell">$ ls -i
+10975291 myfile</code></pre>
+    </li>
+    <li>
+        <p><strong><code style="color: darkorange;">Links</code></strong>: Plik ma tylko jedną nazwę - myfile
+       Jeśli wykonamy polecenie:
+        <pre><code class="shell">$ ln myfile thesamefile</code></pre>
+        Otrzymamy drugą nazwę dla tego samego pliku; może ona być w dowolnym innym katalogu.</p>
+    </li>
+    <li>
+        <p><strong><code style="color: darkorange;">Access</code></strong>: Podaje datę ostatniego odczytania danych z pliku.</p>
+    </li>
+    <li>
+        <p><strong><code style="color: darkorange;">Modify</code></strong>: Podaje datę ostatniej modyfikacji treści (dopisania lub nadpisania danych) pliku.</p>
+    </li>
+    <li>
+        <p><strong><code style="color: darkorange;">Change</code></strong>: Podaje datę ostatniej zmiany praw pliku.</p>
+    </li>
+</ul>
+</p>
+<p>
+Gdybyśmy chcieli otrzymać pełne uprawnienia do wszystkich plików musielibyśmy się zalogować jako administrator systemu poleceniem:
+<pre><code class="shell">$ su -l root
+Password:</code></pre>
+Po wpisaniu prawidłowego hasła (nie widać go gdy go wpisujemy) system przenosi nas do katalogu <strong><code>/var/root</code></strong> a powłoka jądra zgłasza gotowość
+wykonania poleceń znakiem hash <strong><code>#</code></strong>. Na tym koncie nieświadomie można uszkodzić system - lepej się wylogujmy:
+<pre><code class="shell"># exit
+$</code></pre>
+</p>
+<p>
+Polecenie su prównuje przekształcenie podanego hasła z napisem umieszczonym w pliku, którego jako użytkownik zwykły nie możemy czytać.
+    Prawo <strong><code>setuid</code></strong> (s zamiast pierwszego x) pozwala wykonać polecenie su jak gdyby wykonywał go administrator
+    a przecież stajemy się nim dopiero po wykonaniu tego polecenia
+<pre><code class="shell">$ ls -l `which su`
+-rwsr-xr-x  1 root  wheel  25488 May  4 09:03 /usr/bin/su</code></pre>
+</p>
+<p>
+    Polecenie write ma uprawnienia dla grupy tty my jednak do niej nie należymy,
+    ale ponieważ plik ma ustawione prawo <strong><code>setgid</code></strong> (s zamiast drugiego x)
+to jesteśmy do niej przydzieleni tylko na czas wykonania tego polecenia.
+<pre><code class="shell">$ ls -l `which write`
+-r-xr-sr-x  1 root  tty  23936 May  4 09:02 /usr/bin/write</code></pre>
+</p>
+<p>
+    Bit lepki <strong><code>sticky bit</code></strong> (t zamiast ostatniego x) ustawiany dla katalogu czyni go współdzielonym aby użytkownicy
+    mogli tworzyć w nim katalogi i pliki ale aby nie mogli sobie wzajemnie ich usuwać. Taką własność ma katalog <strong><code>/var/tmp</code></strong>:
+<pre><code class="shell">$ ls -ld /var/tmp
+drwxrwxrwt  5 root  wheel  160 Jun 13 10:00 /var/tmp</code></pre>
+</p><hr>
+
+<p>Czym innym jest wielkość pliku a czym innym wielkość obszaru zajmowanego przez ten plik na nośniku danych.
+<pre><code class="shell">$ ls -sl myfile
+0 -rw-r--r--  1 adal  staff  0 Jun 15 23:23 myfile</code></pre>
+    Pierwsze zero oznacza zerową ilość zaalokowanych bloków pamięci na nośniku, a drugie zerową ilość danych w pliku.
+    Zapiszmy jeden bajt do pliku:
+<pre><code class="shell">$ echo -n a > myfile</code></pre>
+    Teraz plik ma pojemność jednego bajta ale zajmuje 8 bloków:
+<pre><code class="shell">$ ls -sl myfile
+8 -rw-r--r--  1 adal  staff  1 Jun 15 23:30 myfile</code></pre>
+    Blok ma pojemność 512 bajtów. System plików <a href="https://www.youtube.com/watch?v=Q-iVpZWW_ts">APFS</a> alokuje obszary po 8 bloków czyli 4096 bajtów.
+    Dopiszmy do pliku 4095 bajtów:
+<pre><code class="shell">$ for _ in {1..4095}; do echo -n a >> myfile ; done
+$ ls -sl myfile
+8 -rw-r--r--  1 adal  staff  4096 Jun 15 23:53 myfile</code></pre>
+    Ilość bloków się nie zmieniła. Dopiszmy jeszcze jeden bajt:
+<pre><code class="shell">$ echo -n a >> myfile
+$ ls -sl myfile
+16 -rw-r--r--  1 adal  staff  4097 Jun 15 23:57 myfile</code></pre>
+    Mimo dopisania jednego bajta obszar na nośniku pamięci powiększył się o kolejne 8 bloków.
+    Dodatkowo ilość plików możliwa do przechowania na nośniku pamięci ograniczona jest przez ilość i-węzłów zdeterminowana przez system plików.
+    Raport wykorzystanych bloków i i-węzłów otrzymamy komendą <strong><code>df</code></strong>.
+</p><hr>
+
+<h2>Programy dla macOS</h2>
+
+Źródłem programów płatnych i darmowych kontrolowanym przez firmę Apple jest serwis App Store.
+Innym źródłem darmowych programów przetłumaczonych z wersji linuksowych jest serwis
+<a href="https://en.wikipedia.org/wiki/Homebrew_(package_management_software)">Homebrew</a>.
+Aby z niego skorzystać należy wydać w konsoli polecenie:
+<pre><code class="shell">$ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"</code></pre>
+
+Aplikacje tekstowe można przeglądać na stronie <a href="https://formulae.brew.sh/formula">https://formulae.brew.sh/formula</a>
+a graficzne na stronie <a href="https://formulae.brew.sh/cask">https://formulae.brew.sh/cask</a>.
+
+Aby wyszukać program <strong><code>htop</code></strong>:
+<pre><code class="shell">$ brew search htop</code></pre>
+Wyświetlmy informacje o programie przed jego instalacją:
+<pre><code class="shell">$ brew info htop</code></pre>
+Aby zainstalować:
+<pre><code class="shell">$ brew install htop</code></pre>
+Aby odinstalować program:
+<pre><code class="shell">$ brew uninstall htop</code></pre>
+Aby odświerzyć bazę dostępnych programów i ich uaktualnień:
+<pre><code class="shell">$ brew udate</code></pre>
+Aby uaktualinić już zainstalowane programy:
+<pre><code class="shell">$ brew upgrade</code></pre><hr>
+
+<h2>Języki programowania</h2>
+<p>
+    Najnowszym językiem do tworzenia programów w systemie macOS i jego odmian jak: iOS, watchOS, tvOS, iPadOS
+    oraz szkieletów do budowania serwisów internetowych jak Kitura (od IBM) lub Vapor jest
+    <a href="https://docs.swift.org/swift-book/LanguageGuide/TheBasics.html">Swift</a>.
+    Język Swift jest kompilowany: (czyli kod programu napisany przez programistę w całości musi być przetłumaczony na język maszynowy,
+    znim prawidłowo zacznie go wykonywać procesor)
+</p>
+<p>
+Podstawowym środowiskiem rozwoju oprogramowania dla tego języka jest <a href="https://developer.apple.com/xcode/">Xcode</a> pracujący w warstwie Aqua.
+Inny sposób to kompilacja z linii komend. Poprawnym programem będzie nawet skompilowany z pustego pliku.
+<pre><code class="shell">$ touch myprogram.swift
+$ swiftc -v myprogram.swift</code></pre>
+Uruchomienie otrzymanego po kompilacji już niepustego pliku z kodem maszynowym nic nie robi:
+<pre><code class="shell">$ ./myprogram
+$</code></pre></p><hr>
+
+    <h2>Przykłady algorytmów w języku Swift</h2>
+<p>Kilka zadań algorytmicznych, które rozwiązałem w języku Swift (na podstawie dostępnego fragmentu
+    <a href="https://helion.pl/ksiazki/nowoczesny-c-zbior-praktycznych-zadan-dla-przyszlych-ekspertow-marius-bancila,nowcpp.htm#format/d">książki<a>).</p>
+    Rozwiązania można przetestować w <a href="https://www.tutorialspoint.com/compile_swift_online.php">serwisie kompilującym Swifta online</a>.
+    Na karcie <strong>main.swift</strong> wklejamy kod, gdzie w pierwszej linijce dołączamy standardową bibliotekę Swifta <code>import Foundation</code>).
+    Dane wejściowe zapisujemy na karcie <Strong>STDIN</Strong>. Wykonanie programu następuje po kliknięciu pola <strong>Execute</strong>.</p>
+
+    Napisz program, który oblicza sumę wszystkich liczb naturalnych podzielnych przez 3 lub 5 aż do podanej wartości granicznej wprowadzonej przez użytkownika:
+
+<pre><code class="swift">print("InPut(Int):", terminator: " ")
+
+guard let upNum = Int(readLine()!.trimmingCharacters(in: .whitespacesAndNewlines))
+    else { exit(EXIT_FAILURE) }
+
+let sum = (1...upNum).filter {$0 % 3 == 0 || $0 % 5 == 0} .reduce(0,+)
+print(sum)
+
+</code></pre>
+
+Napisz program, który obliczy i wyświetli największy wspólny dzielnik dwóch dodatnich liczb całkowitych.<br>
+
+Rekurencyjnie:
+
+<pre><code class="swift">extension String: Error {}
+
+let p = UInt(readLine()!)!
+let q = UInt(readLine()!)!
+
+func gcd(_ a: UInt, _ b: UInt) throws -> UInt {
+    if a == 0 && b == 0 { throw "Both numbers are ZERO" }
+    return b == 0 ? a : try gcd(b, a % b)
+}
+
+do {
+    try print(gcd(p,q))
+} catch let Err {
+    print("ERROR: \(Err)")
+}
+
+</code></pre>
+
+Nierekurencyjnie za pomocą krotek:
+
+<pre><code class="swift">let p = UInt(readLine()!)!
+let q = UInt(readLine()!)!
+
+func gcd(_ m: UInt, _ n: UInt) -> UInt {
+    var (a, b) = (m, n)
+    while b != 0 {
+        (a, b) = (b, a % b)
+    }
+    return a
+}
+
+print(gcd(p,q))
+
+</code></pre>
+
+Jako ostatni element sekwencji:
+
+<pre><code class="swift">let p = UInt(readLine()!)!
+let q = UInt(readLine()!)!
+
+let gcd :(UInt, UInt) -> UInt = { sequence(first: ($0, $1), next: {$0.1 != 0 ? ($0.1, $0.0 % $0.1) : nil})
+                                    .suffix(1).first!.0
+                                }
+print(gcd(p,q))
+
+</code></pre>
+
+Testowanie pierwszości liczby:
+<pre><code class="swift">extension Int {
+    var isPrime: Bool {
+        get {
+                guard self > 3 else {return self > 1}
+                guard self % 2 != 0 && self % 3 != 0 else {return false}
+                for i in stride(from: 5, through: Int(Double(self).squareRoot()) + 1, by: 6) {
+                if self % i == 0 || self % (i + 2) == 0 {return false}
+            }
+            return true
+}}}
+
+let n = UInt(readLine()!)!
+print(n.isPrime)
+
+</code></pre>
+
+
+
+</body>
+</html>
